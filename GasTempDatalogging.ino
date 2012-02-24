@@ -12,7 +12,7 @@
 
 #include "DHT.h"
 
-#define DHTPIN 2  //DHT data pin on digital PIN 2
+
 
 //Add the SdFat Libraries
 /*#include <fat.h>
@@ -36,6 +36,7 @@
 #define K 10 //led YELLOW 2
 #define PIN 0 //analog PIN wired to co2 sensor
 #define SOGLIA 1000 // 1000ppm OK value
+#define DHTPIN 2  //DHT data pin on digital PIN 2
 #define DHTTYPE DHT22   // DHT 22  (AM2302) DHT sensor brand
 
 // Connect pin 1 (on the left) of the sensor to +5V
@@ -44,13 +45,13 @@
 // Connect a 10K resistor from pin 2 (data) to pin 1 (power) of the sensor
 
 DHT dht(DHTPIN, DHTTYPE);
-
+/*
 //Create the variables to be used by SdFat Library
 Sd2Card card;
 SdVolume volume;
 SdFile root;
 SdFile file;
-
+*/
 //sd card test
 char name[] = "Test.txt";     //Create an array that contains the name of our file.
 char contents[256];           //This will be a data buffer for writing contents to the file.
@@ -129,12 +130,12 @@ void setup(){
   pinMode(K, OUTPUT);
   Serial.begin(9600);
   Serial.println("DHTxx test!");
-
+/*
   pinMode(10,OUTPUT);
   card.init();               //Initialize the SD card and configure the I/O pins.
   volume.init(card);         //Initialize a volume on the SD card.
   root.openRoot(volume);     //Open the root directory in the volume. 
-
+*/
   dht.begin();
 }
 
@@ -149,14 +150,14 @@ void loop(){
   if (isnan(t) || isnan(h)) {
     Serial.println("Failed to read from DHT");
   } 
- / else {
+ /* else {
     Serial.print("Humidity: "); 
     Serial.print(h);
     Serial.print(" %\t");
     Serial.print("Temperature: "); 
     Serial.print(t);
     Serial.println(" *C");
-  }
+  }*/
 
   time = millis();
   if ( time <= 300000) {  //5 minutes heating time
@@ -182,10 +183,10 @@ void loop(){
     delay(1500);
     lettura = analogRead(PIN);
     lettura = map(lettura,0,1023,350,10000);
-    Serial.print("Vecchia lettura: "); //old reading
+/*    Serial.print("Vecchia lettura: "); //old reading
     Serial.print(letturaOld);
     Serial.print(" | Nuova lettura: "); //new reading
-    Serial.println(lettura);
+    Serial.println(lettura);*/
     if ( lettura < SOGLIA ){
       victory(); //we're done! ding ding ding!
       delay(1500);
@@ -200,7 +201,25 @@ void loop(){
     lettura = 0;
     delay(1500);
   }
-
+  
+  Serial.print("Humidity %");
+  Serial.print("\t");
+  Serial.print("Temp");
+  Serial.print("\t");
+  Serial.print("Previous Reading");
+ // Serial.print("\t");
+//  Serial.print("New Reading");
+  Serial.print("\n");
+  Serial.print(h);
+  Serial.print("\t");
+  Serial.print(t);
+  Serial.print("\t");
+  Serial.print(letturaOld);
+  Serial.print("\t");
+ // Serial.print(lettura);
+ // Serial.print("\n");
+  
+  
 }
 
 
