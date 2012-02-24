@@ -8,16 +8,26 @@
  
  
  */
- 
- 
+
+
 #include "DHT.h"
 
 #define DHTPIN 2  //DHT data pin on digital PIN 2
 
 //Add the SdFat Libraries
-#include <SdFat.h>
-#include <SdFatUtil.h> 
-#include <ctype.h>
+/*#include <fat.h>
+ #include <SdFatUtil.h> 
+ #include <ctype.h>
+ */
+#include <byteordering.h>
+#include <fat.h>
+#include <fat_config.h>
+#include <partition.h>
+#include <partition_config.h>
+#include <sd-reader_config.h>
+#include <sd_raw.h>
+#include <sd_raw_config.h>
+
 
 //This is the for the GAS sensor
 #define R 11 //led RED
@@ -120,6 +130,11 @@ void setup(){
   Serial.begin(9600);
   Serial.println("DHTxx test!");
 
+  pinMode(10,OUTPUT);
+  card.init();               //Initialize the SD card and configure the I/O pins.
+  volume.init(card);         //Initialize a volume on the SD card.
+  root.openRoot(volume);     //Open the root directory in the volume. 
+
   dht.begin();
 }
 
@@ -134,7 +149,7 @@ void loop(){
   if (isnan(t) || isnan(h)) {
     Serial.println("Failed to read from DHT");
   } 
-  else {
+ / else {
     Serial.print("Humidity: "); 
     Serial.print(h);
     Serial.print(" %\t");
@@ -185,5 +200,9 @@ void loop(){
     lettura = 0;
     delay(1500);
   }
+
 }
+
+
+
 
