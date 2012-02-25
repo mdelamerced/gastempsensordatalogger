@@ -9,35 +9,20 @@
  
  */
 
-
+#include <SD.h>
 #include "DHT.h"
 
-
-
-//Add the SdFat Libraries
-/*#include <fat.h>
- #include <SdFatUtil.h> 
- #include <ctype.h>
- */
-#include <byteordering.h>
-#include <fat.h>
-#include <fat_config.h>
-#include <partition.h>
-#include <partition_config.h>
-#include <sd-reader_config.h>
-#include <sd_raw.h>
-#include <sd_raw_config.h>
-
-
 //This is the for the GAS sensor
-#define R 11 //led RED
-#define L 12 //led YELLOW 1
-#define G 13 //led GREEN
-#define K 10 //led YELLOW 2
+#define R 3 //led RED
+#define L 7 //led YELLOW 1
+#define G 6 //led GREEN
+#define K 5 //led YELLOW 2
 #define PIN 0 //analog PIN wired to co2 sensor
 #define SOGLIA 1000 // 1000ppm OK value
 #define DHTPIN 2  //DHT data pin on digital PIN 2
 #define DHTTYPE DHT22   // DHT 22  (AM2302) DHT sensor brand
+
+const int chipSelect = 10;
 
 // Connect pin 1 (on the left) of the sensor to +5V
 // Connect pin 2 of the sensor to whatever your DHTPIN is
@@ -45,18 +30,6 @@
 // Connect a 10K resistor from pin 2 (data) to pin 1 (power) of the sensor
 
 DHT dht(DHTPIN, DHTTYPE);
-/*
-//Create the variables to be used by SdFat Library
-Sd2Card card;
-SdVolume volume;
-SdFile root;
-SdFile file;
-*/
-//sd card test
-char name[] = "Test.txt";     //Create an array that contains the name of our file.
-char contents[256];           //This will be a data buffer for writing contents to the file.
-char in_char=0;
-int index=0;                  //Index will keep track of our position within the contents buffer.
 
 
 unsigned int lettura = 0; //actual read value
@@ -130,13 +103,14 @@ void setup(){
   pinMode(K, OUTPUT);
   Serial.begin(9600);
   Serial.println("DHTxx test!");
-/*
+  Serial.print("Initializing SD card...");
+
   pinMode(10,OUTPUT);
-  card.init();               //Initialize the SD card and configure the I/O pins.
-  volume.init(card);         //Initialize a volume on the SD card.
-  root.openRoot(volume);     //Open the root directory in the volume. 
-*/
-  dht.begin();
+//  if (startSDCard() == true) {
+    dht.begin();
+  //}
+
+
 }
 
 void loop(){
@@ -145,19 +119,73 @@ void loop(){
   float h = dht.readHumidity();
   float t = dht.readTemperature();
 
+  // Get the current time in ms:
+  long currentTime = millis();
+
+    // open the file:
+    File dataFile = SD.open("datalog.csv", FILE_WRITE);
+
+    // if the file is available, write to it:
+    if (dataFile) {
+      dataFile.print(h);
+      dataFile.print("\t");
+      dataFile.print(t);
+      dataFile.print(letturaOld);
+      dataFile.print("\t");
+      dataFile.close();
+  /*    // print to the serial port too:
+      Serial.print(humidity);
+      Serial.print("\t");
+      Serial.println(temperature);
+      lastReadTime = millis();*/
+    }  
+    // if the file isn't open, pop up an error:
+    else {
+      Serial.println("error opening datalog.csv");
+    } 
+  
+/*
+
+
+boolean startSDCard() {
+  boolean result = false;
+  Serial.print("Initializing SD card...");
+  // make sure that the default chip select pin is set to
+  // output, even if you don't use it:
+  pinMode(10, OUTPUT);
+
+  // see if the card is present and can be initialized:
+  if (!SD.begin(chipSelect)) {
+    Serial.println("Card failed, or not present");
+    // don't do anything more:
+    result = false;
+  } 
+  else {
+    Serial.println("card initialized.");
+    File dataFile = SD.open("datalog.csv", FILE_WRITE);
+    if (dataFile) {
+      dataFile.println();
+      dataFile.println("rH (%) \t temp. (*C)");
+      dataFile.close();
+      result = true;
+    }
+  }  
+  return result;
+
+*/
 
   // check if returns are valid, if they are NaN (not a number) then something went wrong!
   if (isnan(t) || isnan(h)) {
     Serial.println("Failed to read from DHT");
   } 
- /* else {
-    Serial.print("Humidity: "); 
-    Serial.print(h);
-    Serial.print(" %\t");
-    Serial.print("Temperature: "); 
-    Serial.print(t);
-    Serial.println(" *C");
-  }*/
+  /* else {
+   Serial.print("Humidity: "); 
+   Serial.print(h);
+   Serial.print(" %\t");
+   Serial.print("Temperature: "); 
+   Serial.print(t);
+   Serial.println(" *C");
+   }*/
 
   time = millis();
   if ( time <= 300000) {  //5 minutes heating time
@@ -183,10 +211,10 @@ void loop(){
     delay(1500);
     lettura = analogRead(PIN);
     lettura = map(lettura,0,1023,350,10000);
-/*    Serial.print("Vecchia lettura: "); //old reading
-    Serial.print(letturaOld);
-    Serial.print(" | Nuova lettura: "); //new reading
-    Serial.println(lettura);*/
+    /*    Serial.print("Vecchia lettura: "); //old reading
+     Serial.print(letturaOld);
+     Serial.print(" | Nuova lettura: "); //new reading
+     Serial.println(lettura);*/
     if ( lettura < SOGLIA ){
       victory(); //we're done! ding ding ding!
       delay(1500);
@@ -201,14 +229,14 @@ void loop(){
     lettura = 0;
     delay(1500);
   }
-  
-  Serial.print("Humidity %");
+
+  Serial.print("rH(%)");
   Serial.print("\t");
-  Serial.print("Temp");
+  Serial.print("*C");
   Serial.print("\t");
-  Serial.print("Previous Reading");
- // Serial.print("\t");
-//  Serial.print("New Reading");
+  Serial.print("C02");
+  // Serial.print("\t");
+  //  Serial.print("New Reading");
   Serial.print("\n");
   Serial.print(h);
   Serial.print("\t");
@@ -216,11 +244,15 @@ void loop(){
   Serial.print("\t");
   Serial.print(letturaOld);
   Serial.print("\t");
- // Serial.print(lettura);
- // Serial.print("\n");
-  
-  
+  // Serial.print(lettura);
+  // Serial.print("\n");
+
+
 }
+
+
+
+
 
 
 
